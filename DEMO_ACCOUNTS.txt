@@ -1,0 +1,22 @@
+SMART KANTIN KAMPUS - AKUN DEMO
+
+Mahasiswa
+Nama   : Fachriza
+Email  : fachriza@kantin.app
+NIRM   : FACHRIZA001
+Pass   : fachriza123
+
+Admin
+Nama   : Administrator
+Email  : admin@kantin.app
+Pass   : admin123
+
+Tenant
+Nama   : Kantin Kampus
+Email  : tenant@kantin.app
+Pass   : tenant@123
+
+Kasir
+Nama   : Kasir Kantin Kampus
+Email  : kasir@kantin.app
+Pass   : kasir@123
