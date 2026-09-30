@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/favorite_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/profile_photo.dart';
 import '../admin/admin_dashboard_screen.dart';
 import '../auth/login_screen.dart';
 import '../home/main_shell.dart';
@@ -15,34 +14,12 @@ import 'help_screen.dart';
 import 'payment_method_screen.dart';
 import 'privacy_policy_screen.dart';
 
-Widget _userImage(String path, double size, BoxFit fit) {
-  final isNetwork = path.startsWith('http://') || path.startsWith('https://');
-  if (isNetwork) {
-    return Image.network(
-      path,
-      width: size,
-      height: size,
+Widget _userImage(String path, double size, BoxFit fit) => ProfilePhoto(
+      path: path,
+      size: size,
       fit: fit,
-      errorBuilder: (_, __, ___) => const Icon(
-        Icons.person,
-        size: 44,
-        color: AppColors.primary,
-      ),
+      fallback: const Icon(Icons.person, size: 44, color: AppColors.primary),
     );
-  }
-
-  return Image.file(
-    File(path),
-    width: size,
-    height: size,
-    fit: fit,
-    errorBuilder: (_, __, ___) => const Icon(
-      Icons.person,
-      size: 44,
-      color: AppColors.primary,
-    ),
-  );
-}
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

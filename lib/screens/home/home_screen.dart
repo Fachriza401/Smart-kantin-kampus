@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +13,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/favorite_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/menu_card.dart';
+import '../../widgets/profile_photo.dart';
 import '../../widgets/tenant_card.dart';
 import '../profile/notification_screen.dart';
 import '../cart/cart_screen.dart';
@@ -23,25 +23,11 @@ import '../tenant/promo_menu_screen.dart';
 import '../tenant/tenant_detail_screen.dart';
 import '../tenant/tenant_list_screen.dart';
 
-Widget _profileImage(String path, double size) {
-  final isNetwork = path.startsWith('http://') || path.startsWith('https://');
-  if (isNetwork) {
-    return Image.network(
-      path,
-      width: size,
-      height: size,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const Icon(Icons.person, color: AppColors.primary),
+Widget _profileImage(String path, double size) => ProfilePhoto(
+      path: path,
+      size: size,
+      fallback: const Icon(Icons.person, color: AppColors.primary),
     );
-  }
-  return Image.file(
-    File(path),
-    width: size,
-    height: size,
-    fit: BoxFit.cover,
-    errorBuilder: (_, __, ___) => const Icon(Icons.person, color: AppColors.primary),
-  );
-}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({

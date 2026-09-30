@@ -168,8 +168,10 @@ class MenuManageScreen extends StatelessWidget {
   }
 }
 
-/// Batas aman data URL foto: kolom `menus.imageUrl` bertipe TEXT (64 KB).
-const _maxImageDataLength = 60000;
+/// Batas ukuran data URL foto menu (~300 KB). Kolom server MEDIUMTEXT
+/// sanggup lebih, tetapi GET /menus mengirim semua foto sekaligus sehingga
+/// foto tetap harus kecil.
+const _maxImageDataLength = 300000;
 
 class MenuFormScreen extends StatefulWidget {
   final MenuItem? menu;
@@ -386,8 +388,8 @@ class _MenuFormScreenState extends State<MenuFormScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    // Foto disimpan sebagai base64 di kolom TEXT MySQL (maks. 64 KB),
-    // jadi harus dikecilkan agar muat.
+    // Foto disimpan sebagai base64 dan ikut terkirim di setiap GET /menus,
+    // jadi dikecilkan agar daftar menu tetap ringan.
     final file = await picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 60,

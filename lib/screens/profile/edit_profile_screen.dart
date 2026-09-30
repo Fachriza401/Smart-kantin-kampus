@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,13 +10,7 @@ import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/api_feedback.dart';
 import '../../utils/password_hasher.dart';
-
-ImageProvider _photoProvider(String path) {
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return NetworkImage(path);
-  }
-  return FileImage(File(path));
-}
+import '../../widgets/profile_photo.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -51,8 +45,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final file = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (file != null && mounted) setState(() => _photoPath = file.path);
+    // Disimpan di server sebagai base64 (kolom TEXT, maks. 64 KB) supaya
+    // foto tampil di semua perangkat, jadi dikecilkan ke ukuran avatar.
+    final file = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth: 256,
+      maxHeight: 256,
+    );
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    if (!mounted) return;
+    if (dataUrl.length > maxProfilePhotoDataLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto terlalu besar. Pilih foto lain.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    setState(() => _photoPath = dataUrl);
   }
 
   Future<void> _save() async {
@@ -115,9 +129,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 CircleAvatar(
                   radius: 48,
                   backgroundColor: AppColors.primaryContainer,
-                  backgroundImage: _photoPath == null
-                      ? null
-                      : _photoProvider(_photoPath!),
+                  backgroundImage: profilePhotoProvider(_photoPath),
                   child: _photoPath == null
                       ? const Icon(Icons.person, size: 48, color: AppColors.primary)
                       : null,
