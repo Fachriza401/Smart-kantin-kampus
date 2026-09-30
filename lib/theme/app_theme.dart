@@ -137,7 +137,7 @@ class AppTheme {
         ),
       ),
       // ── Card: elegan, border halus, shadow lembut ──
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.surfaceContainerLowest,
         elevation: 0,
         shadowColor: Colors.transparent,
@@ -276,7 +276,7 @@ class AppTheme {
         showCheckmark: false,
       ),
       // ── Dialog ──
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surfaceContainerLowest,
         elevation: 10,
         shape: RoundedRectangleBorder(
@@ -300,7 +300,7 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
       ),
       // ── Tab Bar ──
-      tabBarTheme: const TabBarTheme(
+      tabBarTheme: const TabBarThemeData(
         labelColor: AppColors.primary,
         unselectedLabelColor: AppColors.onSurfaceMuted,
         indicatorColor: AppColors.primary,
@@ -359,7 +359,7 @@ class AppTheme {
           letterSpacing: -0.3,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: _darkSurfaceDarkBright,
         elevation: 0,
         shadowColor: Colors.transparent,
@@ -470,7 +470,7 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         showCheckmark: false,
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: _darkSurfaceDarkBright,
         elevation: 10,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -487,7 +487,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         behavior: SnackBarBehavior.floating,
       ),
-      tabBarTheme: const TabBarTheme(
+      tabBarTheme: const TabBarThemeData(
         labelColor: AppColors.primaryLight,
         unselectedLabelColor: _darkMuted,
         indicatorColor: AppColors.primaryLight,

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../db/db_helper.dart';
 import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../profile/notification_screen.dart';
@@ -59,11 +60,12 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
         _loading = false;
         _error = null;
       });
-    } catch (e) {
-      if (!mounted) return;
+    } on ApiException catch (e) {
+      // Gagal saat polling: pertahankan daftar yang sedang tampil.
+      if (!mounted || silent) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = e.message;
       });
     }
   }
@@ -95,13 +97,21 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     final i = flow.indexOf(order.status);
     if (i < 0 || i >= flow.length - 1) return;
 
-    await DBHelper.instance.updateOrderStatus(order.id!, flow[i + 1]);
-    await _refresh(silent: true);
+    await _changeStatus(order, flow[i + 1]);
   }
 
   Future<void> _reject(CampusOrder order) async {
     if (order.id == null) return;
-    await DBHelper.instance.updateOrderStatus(order.id!, 'Dibatalkan');
+    await _changeStatus(order, 'Dibatalkan');
+  }
+
+  Future<void> _changeStatus(CampusOrder order, String status) async {
+    try {
+      await DBHelper.instance.updateOrderStatus(order.id!, status);
+    } on ApiException catch (e) {
+      _message(e.message);
+      return;
+    }
     await _refresh(silent: true);
   }
 

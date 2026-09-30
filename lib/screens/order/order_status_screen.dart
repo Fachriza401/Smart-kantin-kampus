@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../../db/db_helper.dart';
 import '../../models/order.dart';
+import '../../services/api_client.dart';
+import '../../utils/api_feedback.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
 import '../home/main_shell.dart';
@@ -39,18 +41,29 @@ class _OrderStatusScreenState extends State<OrderStatusScreen> {
   }
 
   Future<void> _load() async {
-    // Status dibaca dari database agar mengikuti proses tenant/kasir.
-    final order = await DBHelper.instance.getOrderById(widget.orderId);
-    if (!mounted) return;
-    setState(() => _order = order);
+    // Status dibaca dari server agar mengikuti proses tenant/kasir.
+    try {
+      final order = await DBHelper.instance.getOrderById(widget.orderId);
+      if (!mounted) return;
+      setState(() => _order = order);
+    } on ApiException catch (e) {
+      // Polling di bawah akan mencoba lagi otomatis.
+      if (mounted) showApiError(context, e);
+    }
   }
 
 
   Future<void> _refreshStatus() async {
     if (_isRefreshing) return;
     _isRefreshing = true;
-    final order = await DBHelper.instance.getOrderById(widget.orderId);
-    _isRefreshing = false;
+    final CampusOrder? order;
+    try {
+      order = await DBHelper.instance.getOrderById(widget.orderId);
+    } on ApiException {
+      return; // Koneksi putus sementara; coba lagi di tick berikutnya.
+    } finally {
+      _isRefreshing = false;
+    }
     if (!mounted || order == null) return;
     if (_order?.status != order.status ||
         _order?.paymentStatus != order.paymentStatus) {

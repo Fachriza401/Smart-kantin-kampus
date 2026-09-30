@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../db/db_helper.dart';
 import '../models/user.dart';
+import '../services/api_client.dart';
 import '../utils/password_hasher.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -45,7 +46,12 @@ class AuthProvider extends ChangeNotifier {
       'tenant1': 'tenant1@kantin.app',
     };
     value = staffAliases[value.toLowerCase()] ?? value;
-    final user = await _db.login(value, password);
+    final AppUser? user;
+    try {
+      user = await _db.login(value, password);
+    } on ApiException catch (e) {
+      return e.message;
+    }
     if (user == null) return 'Kredensial staf tidak cocok.';
     if (!{'admin', 'tenant', 'kasir'}.contains(user.role)) return 'Login mahasiswa/dosen telah dinonaktifkan. Gunakan Guest Checkout.';
     _currentUser = user;
@@ -96,18 +102,26 @@ class AuthProvider extends ChangeNotifier {
     if (name.trim().isEmpty || email.trim().isEmpty || password.isEmpty) return 'Semua field wajib diisi';
     if (!_validPassword(password)) return 'Password minimal 8 karakter dan harus mengandung huruf serta angka';
     if (role != 'tenant' && role != 'kasir') return 'Role tidak valid';
-    if (await _db.getUserByEmail(email.trim()) != null) return 'Email sudah terdaftar';
-    await _db.registerUser(AppUser(name: name.trim(), email: email.trim(), password: hashPassword(password), role: role, tenantName: campusTenant, saldo: 0));
+    try {
+      if (await _db.getUserByEmail(email.trim()) != null) return 'Email sudah terdaftar';
+      await _db.registerUser(AppUser(name: name.trim(), email: email.trim(), password: hashPassword(password), role: role, tenantName: campusTenant, saldo: 0));
+    } on ApiException catch (e) {
+      return e.message;
+    }
     return null;
   }
 
   Future<String?> requestStaffPasswordReset({required String identifier, required String role}) async {
-    final user = await _db.findUserForPasswordReset(identifier.trim());
-    if (user == null || user.role != role) return 'Akun staff tidak ditemukan atau role tidak sesuai';
-    await _db.createPasswordResetRequest(user.id!, user.role);
-    final admins = await _db.getAllUsersByRole('admin');
-    for (final admin in admins) {
-      await _db.createNotification(admin.id!, 'Permintaan Reset Password', '${user.name} (${user.role}) meminta bantuan reset password.', 'security');
+    try {
+      final user = await _db.findUserForPasswordReset(identifier.trim());
+      if (user == null || user.role != role) return 'Akun staff tidak ditemukan atau role tidak sesuai';
+      await _db.createPasswordResetRequest(user.id!, user.role);
+      final admins = await _db.getAllUsersByRole('admin');
+      for (final admin in admins) {
+        await _db.createNotification(admin.id!, 'Permintaan Reset Password', '${user.name} (${user.role}) meminta bantuan reset password.', 'security');
+      }
+    } on ApiException catch (e) {
+      return e.message;
     }
     return 'Permintaan reset password dikirim ke Admin.';
   }
@@ -138,10 +152,14 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> resetPassword({required String identifier, required String newPassword, String? role}) async {
     if (identifier.trim().isEmpty) return 'Masukkan email atau ID';
     if (!_validPassword(newPassword)) return 'Password minimal 8 karakter dan harus mengandung huruf serta angka';
-    final user = await _db.findUserForPasswordReset(identifier);
-    if (user == null) return 'Akun tidak ditemukan';
-    if (role != null && user.role != role) return 'Role akun tidak sesuai';
-    await _db.resetPassword(userId: user.id!, newPassword: newPassword);
+    try {
+      final user = await _db.findUserForPasswordReset(identifier);
+      if (user == null) return 'Akun tidak ditemukan';
+      if (role != null && user.role != role) return 'Role akun tidak sesuai';
+      await _db.resetPassword(userId: user.id!, newPassword: newPassword);
+    } on ApiException catch (e) {
+      return e.message;
+    }
     return null;
   }
 

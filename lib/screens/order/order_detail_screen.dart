@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../db/db_helper.dart';
+import '../../models/menu_item.dart';
 import '../../models/order.dart';
 import '../../providers/cart_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/order_barcode.dart';
 import '../../widgets/pickup_location_card.dart';
@@ -353,7 +356,13 @@ class OrderDetailScreen extends StatelessWidget {
   Future<void> _reorder(BuildContext context) async {
     final cart = context.read<CartProvider>();
     // Ambil data menu terbaru untuk memastikan ketersediaan.
-    final menus = await DBHelper.instance.getAllMenus();
+    final List<MenuItem> menus;
+    try {
+      menus = await DBHelper.instance.getAllMenus();
+    } on ApiException catch (e) {
+      if (context.mounted) showApiError(context, e);
+      return;
+    }
     final byName = {for (final m in menus) m.name: m};
     var added = 0;
     var skipped = 0;

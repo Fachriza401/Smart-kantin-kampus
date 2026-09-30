@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../db/db_helper.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
+import '../../utils/formatters.dart';
 
 class NotificationScreen extends StatefulWidget {
   final bool showBackButton;
@@ -34,29 +37,44 @@ class _NotificationScreenState extends State<NotificationScreen> {
       return;
     }
 
-    final data = await DBHelper.instance.getNotifications(id);
-    await DBHelper.instance.markNotificationsRead(id);
-
-    if (!mounted) return;
-    setState(() {
-      _items = data;
-      _loading = false;
-    });
+    try {
+      final data = await DBHelper.instance.getNotifications(id);
+      await DBHelper.instance.markNotificationsRead(id);
+      if (!mounted) return;
+      setState(() => _items = data);
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
+  /// Item dihapus dari layar lebih dulu (wajib untuk Dismissible), lalu
+  /// dikembalikan bila server gagal menghapusnya.
   Future<void> _delete(int id) async {
-    await DBHelper.instance.deleteNotification(id);
-    if (!mounted) return;
-    setState(() => _items.removeWhere((e) => e['id'] == id));
+    final previous = List<Map<String, dynamic>>.of(_items);
+    setState(() => _items = _items.where((e) => e['id'] != id).toList());
+    try {
+      await DBHelper.instance.deleteNotification(id);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _items = previous);
+      showApiError(context, e);
+    }
   }
 
   Future<void> _deleteAll() async {
     final id = context.read<AuthProvider>().currentUser?.id;
     if (id == null) return;
 
-    await DBHelper.instance.deleteAllNotifications(id);
+    try {
+      await DBHelper.instance.deleteAllNotifications(id);
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+      return;
+    }
     if (!mounted) return;
-    setState(() => _items.clear());
+    setState(() => _items = []);
   }
 
   IconData _icon(String? type) {
@@ -199,7 +217,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        n['createdAt']?.toString() ?? '',
+                                        formatDateTime(n['createdAt']?.toString()),
                                         style: const TextStyle(
                                           fontSize: 10,
                                           color: AppColors.outline,

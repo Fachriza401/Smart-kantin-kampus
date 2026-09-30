@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../db/db_helper.dart';
 import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 
 class RatingScreen extends StatefulWidget {
   final CampusOrder order;
@@ -30,23 +32,30 @@ class _RatingScreenState extends State<RatingScreen> {
     setState(() => _saving = true);
     final db = DBHelper.instance;
     final auth = context.read<AuthProvider>();
-    final menus = await db.getAllMenus();
-    final byName = {for (final m in menus) m.name: m.id};
     final review = _review.text.trim().isEmpty ? null : _review.text.trim();
     // Guest memakai userId 0; akun staf memakai id asli.
     final userId = auth.currentUser?.id ?? 0;
-    // Beri rating untuk setiap menu dalam pesanan.
-    for (final item in widget.order.items) {
-      final menuId = byName[item.menuName];
-      if (menuId == null) continue;
-      await db.createRating(
-        userId: userId,
-        menuId: menuId,
-        orderId: widget.order.id ?? 0,
-        rating: _rating,
-        review: review,
-      );
-      await db.updateMenuRating(menuId);
+    try {
+      final menus = await db.getAllMenus();
+      final byName = {for (final m in menus) m.name: m.id};
+      // Beri rating untuk setiap menu dalam pesanan.
+      for (final item in widget.order.items) {
+        final menuId = byName[item.menuName];
+        if (menuId == null) continue;
+        await db.createRating(
+          userId: userId,
+          menuId: menuId,
+          orderId: widget.order.id ?? 0,
+          rating: _rating,
+          review: review,
+        );
+        await db.updateMenuRating(menuId);
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showApiError(context, e);
+      return;
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

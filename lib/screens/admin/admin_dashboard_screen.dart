@@ -5,7 +5,9 @@ import '../../db/db_helper.dart';
 import '../../models/order.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/dashboard_stats_carousel.dart';
 import 'account_manage_screen.dart';
@@ -39,13 +41,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _load() async {
-    await context.read<AdminProvider>().loadAll();
-    final r = await DBHelper.instance.getRatingsSummary();
-    final d = await DBHelper.instance.getDailySales();
-    final m = await DBHelper.instance.getMonthlySales();
-    final c = await DBHelper.instance.getMenuCategorySales();
-    final o = await DBHelper.instance.getAllOrders();
-    final u = await DBHelper.instance.getUserStatistics();
+    final db = DBHelper.instance;
+    final List<Map<String, dynamic>> r, d, m, c;
+    final List<CampusOrder> o;
+    final Map<String, int> u;
+    try {
+      await context.read<AdminProvider>().loadAll();
+      r = await db.getRatingsSummary();
+      d = await db.getDailySales();
+      m = await db.getMonthlySales();
+      c = await db.getMenuCategorySales();
+      o = await db.getAllOrders();
+      u = await db.getUserStatistics();
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+      return;
+    }
     if (!mounted) return;
     setState(() {
       ratings = r;

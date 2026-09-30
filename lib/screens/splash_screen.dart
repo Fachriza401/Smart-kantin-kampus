@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/favorite_provider.dart';
+import '../services/api_client.dart';
 import '../theme/app_theme.dart';
 import '../widgets/smart_logo.dart';
 import 'home/main_shell.dart';
@@ -20,6 +21,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _fadeAnim;
   late final Animation<double> _scaleAnim;
   late final Animation<Offset> _slideAnim;
+  String? _error;
 
   @override
   void initState() {
@@ -55,10 +57,16 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _start() async {
     final auth = context.read<AuthProvider>();
     final fav = context.read<FavoriteProvider>();
-    await auth.bootstrapData();
-    await auth.tryAutoLogin();
-    await auth.restoreGuestSession();
-    await fav.loadForUser(auth.currentUser?.id);
+    if (_error != null) setState(() => _error = null);
+    try {
+      await auth.bootstrapData();
+      await auth.tryAutoLogin();
+      await auth.restoreGuestSession();
+      await fav.loadForUser(auth.currentUser?.id);
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+      return;
+    }
     await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
@@ -167,15 +175,18 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                         const SizedBox(height: 40),
-                        // Loading indicator
-                        SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: CircularProgressIndicator(
-                            color: Colors.white.withOpacity(0.9),
-                            strokeWidth: 2.5,
-                          ),
-                        ),
+                        if (_error == null)
+                          // Loading indicator
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: CircularProgressIndicator(
+                              color: Colors.white.withOpacity(0.9),
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        else
+                          _ConnectionError(message: _error!, onRetry: _start),
                       ],
                     ),
                   ),
@@ -183,6 +194,41 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
+        ),
+      );
+}
+
+/// Ditampilkan menggantikan loading saat server tidak dapat dihubungi.
+class _ConnectionError extends StatelessWidget {
+  const _ConnectionError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 32),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Coba Lagi'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primary,
+              ),
+            ),
+          ],
         ),
       );
 }

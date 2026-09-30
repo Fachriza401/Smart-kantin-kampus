@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../db/db_helper.dart';
+import '../services/api_client.dart';
 
 /// Mengelola daftar menu favorit (wishlist) pengguna.
 /// Untuk guest (userId = 0) favorit disimpan sementara di memori.
@@ -36,13 +37,27 @@ class FavoriteProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    // Ubah tampilan dulu, lalu kembalikan bila server gagal menyimpan.
     if (isFav) {
       _userFavorites.remove(menuId);
-      await DBHelper.instance.removeFavorite(_userId!, menuId);
     } else {
       _userFavorites.add(menuId);
-      await DBHelper.instance.addFavorite(_userId!, menuId);
     }
     notifyListeners();
+    try {
+      if (isFav) {
+        await DBHelper.instance.removeFavorite(_userId!, menuId);
+      } else {
+        await DBHelper.instance.addFavorite(_userId!, menuId);
+      }
+    } on ApiException catch (e) {
+      debugPrint('Gagal menyimpan favorit menu $menuId: ${e.message}');
+      if (isFav) {
+        _userFavorites.add(menuId);
+      } else {
+        _userFavorites.remove(menuId);
+      }
+      notifyListeners();
+    }
   }
 }

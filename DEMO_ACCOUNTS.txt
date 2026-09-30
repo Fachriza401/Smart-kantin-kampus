@@ -1,22 +1,27 @@
 SMART KANTIN KAMPUS - AKUN DEMO
 
-Mahasiswa
-Nama   : Fachriza
-Email  : fachriza@kantin.app
-NIRM   : FACHRIZA001
-Pass   : fachriza123
+Akun dibuat otomatis oleh server (POST /api/bootstrap) setiap kali
+aplikasi dibuka. Server: https://api-kantin.7sic4.online
+
+Login di aplikasi hanya untuk staf. Pembeli memakai Guest Checkout.
 
 Admin
 Nama   : Administrator
-Email  : admin@kantin.app
+Email  : admin@kantin.app   (atau ketik: admin)
 Pass   : admin123
 
 Tenant
 Nama   : Kantin Kampus
-Email  : tenant@kantin.app
-Pass   : tenant@123
+Email  : tenant1@kantin.app (atau ketik: tenant1)
+Pass   : tenant123
 
 Kasir
 Nama   : Kasir Kantin Kampus
-Email  : kasir@kantin.app
-Pass   : kasir@123
+Email  : kasir@kantin.app   (atau ketik: kasir)
+Pass   : kasir123
+
+Mahasiswa (tersimpan di server, tetapi login mahasiswa dinonaktifkan)
+Nama   : Fachriza
+Email  : fachriza@kantin.app
+NIRM   : FACHRIZA001
+Pass   : fachriza123

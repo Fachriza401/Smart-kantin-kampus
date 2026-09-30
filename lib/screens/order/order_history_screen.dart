@@ -4,6 +4,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../db/db_helper.dart';
 import '../../models/order.dart';
+import '../../services/api_client.dart';
+import '../../utils/api_feedback.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/formatters.dart';
@@ -29,13 +31,19 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   Future<void> _load() async {
     final auth = context.read<AuthProvider>();
-    final orders = auth.isGuest
-        ? (auth.guestEmail == null
-            ? <CampusOrder>[]
-            : await DBHelper.instance.getOrdersByGuestEmail(auth.guestEmail!))
-        : (auth.currentUser?.id == null
-            ? <CampusOrder>[]
-            : await DBHelper.instance.getOrdersByUser(auth.currentUser!.id!));
+    final List<CampusOrder> orders;
+    try {
+      orders = auth.isGuest
+          ? (auth.guestEmail == null
+              ? <CampusOrder>[]
+              : await DBHelper.instance.getOrdersByGuestEmail(auth.guestEmail!))
+          : (auth.currentUser?.id == null
+              ? <CampusOrder>[]
+              : await DBHelper.instance.getOrdersByUser(auth.currentUser!.id!));
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _orders = orders);

@@ -2,7 +2,9 @@
 
 import '../../db/db_helper.dart';
 import '../../models/order.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/order_barcode.dart';
 
@@ -31,8 +33,16 @@ class _GuestPaymentResumeScreenState extends State<GuestPaymentResumeScreen> {
     if (_loading || order?.id == null) return;
 
     setState(() => _loading = true);
-    await DBHelper.instance.markVirtualPaymentPaid(order!.id!);
-    final refreshed = await DBHelper.instance.getOrderById(order.id!);
+    final CampusOrder? refreshed;
+    try {
+      await DBHelper.instance.markVirtualPaymentPaid(order!.id!);
+      refreshed = await DBHelper.instance.getOrderById(order.id!);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      showApiError(context, e);
+      return;
+    }
 
     if (!mounted) return;
     setState(() {

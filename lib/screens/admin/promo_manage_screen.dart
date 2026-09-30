@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../data/dummy_data.dart';
 import '../../models/promo.dart';
 import '../../providers/admin_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 
 class PromoManageScreen extends StatelessWidget {
   const PromoManageScreen({super.key});
@@ -111,7 +113,11 @@ class PromoManageScreen extends StatelessWidget {
       ),
     );
     if (ok == true && context.mounted) {
-      await context.read<AdminProvider>().deletePromo(promo.id);
+      try {
+        await context.read<AdminProvider>().deletePromo(promo.id);
+      } on ApiException catch (e) {
+        if (context.mounted) showApiError(context, e);
+      }
     }
   }
 
@@ -272,10 +278,15 @@ class _PromoFormScreenState extends State<PromoFormScreen> {
       active: _active,
       icon: _icon,
     );
-    if (_isEdit) {
-      await admin.updatePromo(promo);
-    } else {
-      await admin.addPromo(promo);
+    try {
+      if (_isEdit) {
+        await admin.updatePromo(promo);
+      } else {
+        await admin.addPromo(promo);
+      }
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+      return;
     }
     if (!mounted) return;
     Navigator.of(context).pop();

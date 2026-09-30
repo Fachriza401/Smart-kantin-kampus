@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../../db/db_helper.dart';
 import '../../models/order.dart';
 import '../../models/user.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 import '../../utils/formatters.dart';
 import '../qr/qr_scanner_screen.dart';
 
@@ -21,6 +23,7 @@ class CustomerPaymentsScreen extends StatefulWidget {
 class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen> {
   Timer? _timer;
   bool _loading = true;
+  bool _fetching = false;
   List<CampusOrder> _orders = [];
   final Map<int, AppUser?> _buyers = {};
 
@@ -28,7 +31,7 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen> {
   void initState() {
     super.initState();
     _load();
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _load(silent: true));
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _load(silent: true));
   }
 
   @override
@@ -37,19 +40,28 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen> {
     super.dispose();
   }
 
+  /// [silent] = dipanggil polling: tanpa spinner dan tanpa pesan error.
   Future<void> _load({bool silent = false}) async {
+    if (_fetching) return; // Request sebelumnya belum selesai.
+    _fetching = true;
     if (!silent && mounted) setState(() => _loading = true);
-    final orders = await DBHelper.instance.getAllOrders();
-    for (final order in orders) {
-      if (!_buyers.containsKey(order.userId)) {
-        _buyers[order.userId] = await DBHelper.instance.getUserById(order.userId);
+    try {
+      final orders = await DBHelper.instance.getAllOrders();
+      for (final order in orders) {
+        if (order.userId > 0 && !_buyers.containsKey(order.userId)) {
+          _buyers[order.userId] = await DBHelper.instance.getUserById(order.userId);
+        }
       }
+      if (!mounted) return;
+      setState(() {
+        _orders = orders.where((order) => order.status != 'Dibatalkan').take(40).toList();
+      });
+    } on ApiException catch (e) {
+      if (!silent && mounted) showApiError(context, e);
+    } finally {
+      _fetching = false;
+      if (mounted && _loading) setState(() => _loading = false);
     }
-    if (!mounted) return;
-    setState(() {
-      _orders = orders.where((order) => order.status != 'Dibatalkan').take(40).toList();
-      _loading = false;
-    });
   }
 
   Future<void> _confirmCash(CampusOrder order) async {
@@ -65,7 +77,12 @@ class _CustomerPaymentsScreenState extends State<CustomerPaymentsScreen> {
       ),
     );
     if (confirmed != true) return;
-    await DBHelper.instance.confirmCashPayment(order.id!);
+    try {
+      await DBHelper.instance.confirmCashPayment(order.id!);
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+      return;
+    }
     await _load();
   }
 

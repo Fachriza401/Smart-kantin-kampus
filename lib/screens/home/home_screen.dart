@@ -8,6 +8,7 @@ import '../../data/dummy_data.dart';
 import '../../db/db_helper.dart';
 import '../../models/menu_item.dart';
 import '../../models/promo.dart';
+import '../../services/api_client.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/favorite_provider.dart';
@@ -100,8 +101,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshNotificationCount();
+      // Setiap tick = 1 request ke server, jadi jangan terlalu rapat.
       _notificationTimer = Timer.periodic(
-        const Duration(seconds: 2),
+        const Duration(seconds: 10),
         (_) => _refreshNotificationCount(),
       );
       _startPromoAutoSlide();
@@ -126,7 +128,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final count = await DBHelper.instance.getUnreadNotificationCount(userId);
+    final int count;
+    try {
+      count = await DBHelper.instance.getUnreadNotificationCount(userId);
+    } on ApiException {
+      return; // Badge tetap memakai angka terakhir; tick berikutnya coba lagi.
+    }
     if (!mounted || count == _notificationCount) return;
     setState(() => _notificationCount = count);
   }

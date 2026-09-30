@@ -6,7 +6,10 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
+import '../../utils/password_hasher.dart';
 
 ImageProvider _photoProvider(String path) {
   if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -74,14 +77,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       id: user.id,
       name: name,
       email: email,
-      password: password.isEmpty ? user.password : password,
+      password: password.isEmpty ? user.password : hashPassword(password),
       role: user.role,
+      nirm: user.nirm,
       photoPath: _photoPath,
       saldo: user.saldo,
       tenantName: user.tenantName,
     );
 
-    await auth.updateProfile(updated);
+    try {
+      await auth.updateProfile(updated);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      showApiError(context, e);
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _loading = false);

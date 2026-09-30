@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../db/db_helper.dart';
+import '../../services/api_client.dart';
+import '../../utils/api_feedback.dart';
 import '../../theme/app_theme.dart';
 
 class PasswordResetRequestsScreen extends StatefulWidget {
@@ -22,12 +24,15 @@ class _PasswordResetRequestsScreenState extends State<PasswordResetRequestsScree
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final rows = await DBHelper.instance.getPendingPasswordResetRequests();
-    if (!mounted) return;
-    setState(() {
-      _rows = rows;
-      _loading = false;
-    });
+    try {
+      final rows = await DBHelper.instance.getPendingPasswordResetRequests();
+      if (!mounted) return;
+      setState(() => _rows = rows);
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _resolve(Map<String, dynamic> row) async {
@@ -60,11 +65,16 @@ class _PasswordResetRequestsScreenState extends State<PasswordResetRequestsScree
     controller.dispose();
     if (newPassword == null) return;
 
-    await DBHelper.instance.resolvePasswordResetRequest(
-      row['id'] as int,
-      row['userId'] as int,
-      newPassword,
-    );
+    try {
+      await DBHelper.instance.resolvePasswordResetRequest(
+        row['id'] as int,
+        row['userId'] as int,
+        newPassword,
+      );
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+      return;
+    }
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import '../../data/dummy_data.dart';
 import '../../models/menu_item.dart';
 import '../../providers/admin_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 import '../../utils/formatters.dart';
 
 class MenuManageScreen extends StatelessWidget {
@@ -96,9 +98,8 @@ class MenuManageScreen extends StatelessWidget {
                           label: 'HABIS — Ketuk untuk aktifkan',
                           color: AppColors.error,
                           bgColor: AppColors.errorContainer,
-                          onTap: () => context
-                              .read<AdminProvider>()
-                              .setMenuAvailability(menu.id, true),
+                          onTap: () =>
+                              _setAvailability(context, menu.id, true),
                         )
                       else
                         _StatusBadge(
@@ -106,9 +107,8 @@ class MenuManageScreen extends StatelessWidget {
                           label: 'TERSEDIA — Ketuk untuk nonaktifkan',
                           color: AppColors.primaryDark,
                           bgColor: AppColors.primaryContainer,
-                          onTap: () => context
-                              .read<AdminProvider>()
-                              .setMenuAvailability(menu.id, false),
+                          onTap: () =>
+                              _setAvailability(context, menu.id, false),
                         ),
                     ],
                   ),
@@ -138,7 +138,23 @@ class MenuManageScreen extends StatelessWidget {
       ),
     );
     if (ok == true && context.mounted) {
-      await context.read<AdminProvider>().deleteMenu(menu.id);
+      try {
+        await context.read<AdminProvider>().deleteMenu(menu.id);
+      } on ApiException catch (e) {
+        if (context.mounted) showApiError(context, e);
+      }
+    }
+  }
+
+  Future<void> _setAvailability(
+    BuildContext context,
+    int menuId,
+    bool tersedia,
+  ) async {
+    try {
+      await context.read<AdminProvider>().setMenuAvailability(menuId, tersedia);
+    } on ApiException catch (e) {
+      if (context.mounted) showApiError(context, e);
     }
   }
 
@@ -151,6 +167,9 @@ class MenuManageScreen extends StatelessWidget {
     );
   }
 }
+
+/// Batas aman data URL foto: kolom `menus.imageUrl` bertipe TEXT (64 KB).
+const _maxImageDataLength = 60000;
 
 class MenuFormScreen extends StatefulWidget {
   final MenuItem? menu;
@@ -367,17 +386,32 @@ class _MenuFormScreenState extends State<MenuFormScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
+    // Foto disimpan sebagai base64 di kolom TEXT MySQL (maks. 64 KB),
+    // jadi harus dikecilkan agar muat.
     final file = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 80,
-      maxWidth: 1200,
+      imageQuality: 60,
+      maxWidth: 480,
+      maxHeight: 480,
     );
     if (file == null || !mounted) return;
 
     final bytes = await file.readAsBytes();
-    setState(() {
-      _imageUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-    });
+    final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    if (!mounted) return;
+    if (dataUrl.length > _maxImageDataLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Foto terlalu besar untuk disimpan. Pilih foto lain atau '
+            'potong fotonya lebih dulu.',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    setState(() => _imageUrl = dataUrl);
   }
 
   Widget _imagePreview() {
@@ -447,10 +481,15 @@ class _MenuFormScreenState extends State<MenuFormScreen> {
       icon: _icon,
       imageUrl: _imageUrl,
     );
-    if (_isEdit) {
-      await admin.updateMenu(menu);
-    } else {
-      await admin.addMenu(menu);
+    try {
+      if (_isEdit) {
+        await admin.updateMenu(menu);
+      } else {
+        await admin.addMenu(menu);
+      }
+    } on ApiException catch (e) {
+      if (mounted) showApiError(context, e);
+      return;
     }
     if (!mounted) return;
     Navigator.of(context).pop();

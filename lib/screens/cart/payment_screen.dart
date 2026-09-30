@@ -83,7 +83,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         status: 'Menunggu Persetujuan Tenant',
         pickupTime: widget.pickupTime,
         note: widget.note,
-        createdAt: DateTime.now().toIso8601String(),
+        createdAt: nowUtcIso(),
         guestName: guestName,
         guestEmail: guestEmail,
         queueNumber: widget.queueNumber,

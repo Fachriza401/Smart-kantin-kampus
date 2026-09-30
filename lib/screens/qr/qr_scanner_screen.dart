@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../db/db_helper.dart';
 import '../../models/order.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/api_feedback.dart';
 import '../../utils/formatters.dart';
 import '../order/order_status_screen.dart';
 
@@ -29,13 +31,19 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       _message = 'Memeriksa QR pesanan...';
     });
 
-    final order = await DBHelper.instance.getOrderByCode(rawValue.trim());
+    CampusOrder? order;
+    String? failure;
+    try {
+      order = await DBHelper.instance.getOrderByCode(rawValue.trim());
+    } on ApiException catch (e) {
+      failure = e.message;
+    }
     if (!mounted) return;
 
     if (order == null) {
       setState(() {
         _processing = false;
-        _message = 'QR tidak dikenali sebagai nomor pesanan.';
+        _message = failure ?? 'QR tidak dikenali sebagai nomor pesanan.';
       });
       await Future<void>.delayed(const Duration(seconds: 2));
       if (mounted) setState(() => _message = null);
@@ -49,9 +57,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     if (role == 'kasir') {
       await _verifyPickup(order);
     } else {
+      final orderId = order.id!;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => OrderStatusScreen(orderId: order.id!),
+          builder: (_) => OrderStatusScreen(orderId: orderId),
         ),
       );
     }
@@ -115,11 +124,15 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     if (!mounted) return;
 
     if (confirmed == true) {
-      await DBHelper.instance.updateOrderStatus(order.id!, 'Selesai');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pesanan berhasil diserahkan kepada mahasiswa.')),
-      );
+      try {
+        await DBHelper.instance.updateOrderStatus(order.id!, 'Selesai');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pesanan berhasil diserahkan kepada mahasiswa.')),
+        );
+      } on ApiException catch (e) {
+        if (mounted) showApiError(context, e);
+      }
     }
 
     if (!mounted) return;

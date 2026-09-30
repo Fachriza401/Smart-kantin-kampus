@@ -5,6 +5,9 @@ import '../models/menu_item.dart';
 import '../models/promo.dart';
 
 /// Provider untuk fitur admin: mengelola menu & promo.
+///
+/// Method mutasi meneruskan [ApiException] ke pemanggil agar layar bisa
+/// menampilkan pesan gagal.
 class AdminProvider extends ChangeNotifier {
   final _db = DBHelper.instance;
 
@@ -17,14 +20,17 @@ class AdminProvider extends ChangeNotifier {
   bool _loading = false;
   bool get loading => _loading;
 
-  /// Muat semua menu & promo dari database.
+  /// Muat semua menu & promo dari server.
   Future<void> loadAll() async {
     _loading = true;
     notifyListeners();
-    _menus = await _db.getAllMenus();
-    _promos = await _db.getAllPromos();
-    _loading = false;
-    notifyListeners();
+    try {
+      _menus = await _db.getAllMenus();
+      _promos = await _db.getAllPromos();
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 
   // ---------------- MENU ----------------
