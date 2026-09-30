@@ -129,8 +129,7 @@ class ProfileScreen extends StatelessWidget {
                             const SizedBox(height: 12),
                           ],
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
@@ -146,8 +145,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
@@ -386,8 +384,7 @@ class _SectionGap extends StatelessWidget {
   const _SectionGap();
 
   @override
-  Widget build(BuildContext context) =>
-      const SizedBox(height: 18);
+  Widget build(BuildContext context) => const SizedBox(height: 18);
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -437,19 +434,24 @@ class _SectionCard extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            children[i],
-            if (i < children.length - 1)
-              const Divider(
-                height: 1,
-                indent: 72,
-                endIndent: 16,
-                color: AppColors.outlineVariant,
-              ),
+      // Material transparan: ListTile butuh ancestor Material di dalam
+      // kartu berwarna agar efek ketuk (ripple) terlihat.
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              children[i],
+              if (i < children.length - 1)
+                const Divider(
+                  height: 1,
+                  indent: 72,
+                  endIndent: 16,
+                  color: AppColors.outlineVariant,
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

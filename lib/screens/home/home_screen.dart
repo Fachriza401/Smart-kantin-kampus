@@ -506,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 160,
               child: PageView.builder(
                 controller: _promoController,
-                itemCount: 1000000,
+                // itemCount sengaja kosong: carousel berputar tanpa batas.
                 itemBuilder: (context, index) {
                   final promo = promos[index % promos.length];
                   return Padding(
