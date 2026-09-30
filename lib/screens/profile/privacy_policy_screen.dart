@@ -33,28 +33,30 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
           _SectionTitle('2. Data yang Kami Kumpulkan'),
           _SectionBody(
-            'Kami mengumpulkan data berikut: nama, email, dan password yang Anda '
-            'daftarkan. Data ini digunakan untuk keperluan pembuatan akun dan '
-            'verifikasi login.',
+            'Pembeli (Guest Checkout): nama, email, isi pesanan, waktu '
+            'pengambilan, catatan, serta metode dan status pembayaran. Akun staf: '
+            'nama, email, password (disimpan dalam bentuk hash), dan foto profil '
+            'bila diunggah. Kamera hanya dipakai untuk memindai QR pesanan. Kami '
+            'tidak mengumpulkan lokasi, kontak, atau data untuk iklan.',
           ),
           _SectionTitle('3. Penggunaan Data'),
           _SectionBody(
-            'Data Anda digunakan untuk: (a) memproses transaksi dan pesanan, '
-            '(b) mengelola saldo kampus, (c) memberikan layanan bantuan, dan '
-            '(d) meningkatkan kualitas layanan aplikasi.',
+            'Data Anda digunakan untuk: (a) membuat dan memproses pesanan, '
+            '(b) memberi nomor antrean dan notifikasi status pesanan, '
+            '(c) mencatat pembayaran, dan (d) menyusun laporan penjualan kantin.',
           ),
           _SectionTitle('4. Penyimpanan Data'),
           _SectionBody(
-            'Data Anda disimpan secara lokal di perangkat Anda menggunakan basis '
-            'data SQLite. Kami tidak mentransmisikan data pribadi Anda ke server '
-            'pihak ketiga tanpa izin.',
+            'Data pesanan dan akun disimpan di server Smart Kantin Kampus dan '
+            'dikirim melalui koneksi terenkripsi (HTTPS). Pesanan dapat dilihat '
+            'staf kantin untuk diproses. Kami tidak menjual atau membagikan data '
+            'Anda kepada pihak ketiga.',
           ),
           _SectionTitle('5. Keamanan Data'),
           _SectionBody(
             'Kami menerapkan langkah-langkah keamanan yang wajar untuk melindungi '
-            'data Anda dari akses yang tidak sah. Namun, metode penyimpanan lokal '
-            'memiliki keterbatasan sehingga Anda disarankan menjaga kerahasiaan '
-            'kredensial akun.',
+            'data Anda, termasuk enkripsi HTTPS dan penyimpanan password dalam '
+            'bentuk hash. Anda disarankan menjaga kerahasiaan kredensial akun.',
           ),
           _SectionTitle('6. Hak Anda'),
           _SectionBody(
